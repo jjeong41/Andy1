@@ -1,0 +1,108 @@
+version: '3.8'
+services:
+  solution:
+    build:
+      context: ./Solution
+      dockerfile: Dockerfile
+    networks:
+      - deploy
+    container_name: Solution
+
+  andy:
+    build:
+      context: ./Andy
+      dockerfile: Dockerfile
+    working_dir: /app
+    command: npm start
+    volumes:
+      - .:/app
+    networks:
+      - deploy
+    container_name: Andy
+    ports:
+      - "3000:3000"
+
+  andylogin:
+    build:
+      context: ./AndyLogin
+      dockerfile: Dockerfile
+    networks:
+      - deploy
+    container_name: AndyLogin
+    ports:
+      - "8080:8080"
+
+  mypage:
+    build:
+      context: ./MyPage
+      dockerfile: Dockerfile
+    networks:
+      - deploy
+    container_name: MyPage
+    ports:
+      - "8081:8080"
+
+  detection:
+    build:
+      context: ./Detection
+      dockerfile: Dockerfile
+    networks:
+      - deploy
+    container_name: Detection
+    ports:
+      - "80:80"
+
+  proxynginx:
+    image: nginx
+    volumes:
+      - /home/ubuntu/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt/archive/j10a102.p.ssafy.io:/etc/nginx/ssl/
+    networks:
+      - deploy
+    container_name: proxynginx
+    ports:
+      - "80:80"
+      - "443:443"
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: ssafy102!
+    volumes:
+      - /home/ubuntu/mysql:/etc/mysql/conf.d
+    networks:
+      - deploy
+    container_name: mysql
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - /home/ubuntu/redis:/data
+      - /home/ubuntu/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - deploy
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: Jenkins
+    user: root
+    environment:
+      - JENKINS_OPTS=--prefix=/Jenkins
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/ubuntu/lastjenkins:/var/jenkins_home
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    networks:
+      - deploy
+
+networks:
+  deploy:
+    driver: bridge
